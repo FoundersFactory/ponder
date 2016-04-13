@@ -1,48 +1,49 @@
 package main
 
 import (
-  "flag"
+	"flag"
 	"fmt"
-	"github.com/proglottis/gpgme"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
-  "io"
-  "path/filepath"
+	"path/filepath"
+
+	"github.com/proglottis/gpgme"
 )
 
+// Template for initialized files
 const (
-TEMPLATE =
-`[ACCESS]
+	TEMPLATE = `[ACCESS]
 %s = *
 
 [myhost]
 username = me
 password = xx`
-LOCATION = "./"
+	LOCATION = "./"
 )
 
 func main() {
-  var init bool
-  var edit bool
+	var init bool
+	var edit bool
 
-  flag.BoolVar(&init, "i", false, "Initialize a new password db")
-  flag.BoolVar(&edit, "e", false, "Edit a password db")
+	flag.BoolVar(&init, "i", false, "Initialize a new password db")
+	flag.BoolVar(&edit, "e", false, "Edit a password db")
 
-  flag.Parse()
+	flag.Parse()
 
-  if init {
-    keys, _ := gpgme.FindKeys("", false)
-    email := keys[0].UserIDs().Email()
+	if init {
+		keys, _ := gpgme.FindKeys("", false)
+		email := keys[0].UserIDs().Email()
 
-    editString(fmt.Sprintf(TEMPLATE, email))
+		editString(fmt.Sprintf(TEMPLATE, email))
 
-  } else if edit {
+	} else if edit {
 
-  } else {
-    decrypt()
-  }
+	} else {
+		decrypt()
+	}
 }
 
 func editString(text string) {
@@ -75,28 +76,28 @@ func editString(text string) {
 }
 
 func decrypt() {
-  var filename string
-  keys, _ := gpgme.FindKeys("", false)
-  for i := 0; i < len(keys); i++ {
-    gpgKey := fmt.Sprintf("%s.gpg", keys[i].SubKeys().KeyID())
-    filePath , _ := filepath.Abs(gpgKey)
-    if _, err := os.Stat(filePath); err == nil {
-      filename = filePath
-      break
-    }
-  }
+	var filename string
+	keys, _ := gpgme.FindKeys("", false)
+	for i := 0; i < len(keys); i++ {
+		gpgKey := fmt.Sprintf("%s.gpg", keys[i].SubKeys().KeyID())
+		filePath, _ := filepath.Abs(gpgKey)
+		if _, err := os.Stat(filePath); err == nil {
+			filename = filePath
+			break
+		}
+	}
 
-  if filename == "" {
+	if filename == "" {
 		log.Fatal("Unable to find matching key file")
 	}
 
-  f, err := os.Open(filename)
-  plain, err := gpgme.Decrypt(f)
-  if err != nil {
-    panic(err)
-  }
-  defer plain.Close()
-  if _, err := io.Copy(os.Stdout, plain); err != nil {
-    panic(err)
-  }
+	f, err := os.Open(filename)
+	plain, err := gpgme.Decrypt(f)
+	if err != nil {
+		panic(err)
+	}
+	defer plain.Close()
+	if _, err := io.Copy(os.Stdout, plain); err != nil {
+		panic(err)
+	}
 }

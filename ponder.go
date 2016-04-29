@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -42,7 +43,13 @@ func main() {
 	} else if edit {
 
 	} else {
-		decrypt()
+		plain, err := decrypt()
+		if err != nil {
+			panic(err)
+		}
+		if _, err := io.Copy(os.Stdout, plain); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -75,7 +82,7 @@ func editString(text string) {
 	os.Remove(tmpfile.Name())
 }
 
-func decrypt() {
+func decrypt() (*bytes.Buffer, error) {
 	var filename string
 	keys, _ := gpgme.FindKeys("", false)
 	for i := 0; i < len(keys); i++ {
@@ -93,11 +100,11 @@ func decrypt() {
 
 	f, err := os.Open(filename)
 	plain, err := gpgme.Decrypt(f)
+	defer plain.Close()
 	if err != nil {
 		panic(err)
 	}
-	defer plain.Close()
-	if _, err := io.Copy(os.Stdout, plain); err != nil {
-		panic(err)
-	}
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(plain)
+	return buf, err
 }

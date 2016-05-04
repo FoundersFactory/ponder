@@ -107,13 +107,19 @@ func findKey(user string, keylist []*gpgme.Key) *gpgme.Key {
 func encrypt(tmpFile *os.File) {
 	keys, _ := gpgme.FindKeys("", false)
 
-	cfg, err := ini.Load(tmpFile.Read())
+	cfg, err := ini.Load(tmpFile.Name())
 
 	if err != nil {
 		panic(err)
 	}
 
-	accesshash := cfg.GetSection("ACCESS").KeysHash()
+	access, err := cfg.GetSection("ACCESS")
+
+	if err != nil {
+		panic(err)
+	}
+
+	accesshash := access.KeysHash()
 
 	for user, sections := range accesshash {
 		key := findKey(user, keys)

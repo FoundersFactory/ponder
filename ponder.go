@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 
 	"github.com/proglottis/gpgme"
+	"github.com/vaughan0/go-ini"
 )
 
 // Template for initialized files
@@ -41,7 +42,11 @@ func main() {
 		editString(fmt.Sprintf(TEMPLATE, email))
 
 	} else if edit {
-
+		plain, err := decrypt()
+		if err != nil {
+			panic(err)
+		}
+		editString(plain.String())
 	} else {
 		plain, err := decrypt()
 		if err != nil {
@@ -77,6 +82,7 @@ func editString(text string) {
 		log.Fatal(err)
 	}
 
+	encrypt(tmpfile)
 	// close and remove temp file
 	tmpfile.Close()
 	os.Remove(tmpfile.Name())
@@ -95,6 +101,23 @@ func findKey(user string, keylist []*gpgme.Key) *gpgme.Key {
 		}
 	}
 	return userKey
+}
+
+func encrypt(tmpFile *os.File) {
+	keys, _ := gpgme.FindKeys("", false)
+
+	file, err := ini.LoadFile(tmpFile.Name())
+	if err != nil {
+		panic(err)
+	}
+
+	for user, sections := range file["ACCESS"] {
+		key := findKey(user, keys)
+		if key == nil {
+			println(fmt.Sprintf("No key found for %s", user))
+			continue
+		}
+	}
 }
 
 func decrypt() (*bytes.Buffer, error) {

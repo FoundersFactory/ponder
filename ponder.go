@@ -89,25 +89,42 @@ func editString(text string) {
 	os.Remove(tmpfile.Name())
 }
 
-func findKey(user string, keylist []*gpgme.Key) *gpgme.Key {
-	var userKey *gpgme.Key
+func findKey(user string, keylist []*gpgme.Key) []*gpgme.Key {
+	var userKey []*gpgme.Key
 	for i := 0; i < len(keylist); i++ {
 		subkey := keylist[i].SubKeys()
 		if user == subkey.KeyID() {
-			userKey = keylist[i]
+			userKey = append(userKey, keylist[i])
 		}
 		userIDs := keylist[i].UserIDs()
 		if user == userIDs.Email() {
-			userKey = keylist[i]
+			userKey = append(userKey, keylist[i])
 		}
 	}
 	return userKey
 }
 
-func copy_ini(cfg *ini.File, sections []string) {
+func copy_ini(cfg *ini.File, sections []string) *ini.File {
+	if sections == nil {
+		return cfg
+	}
+
+	newCfg := ini.Empty()
 	allSections := cfg.Sections()
 	for i := 0; i < len(allSections); i++ {
+		for j := 0; j < len(sections); j++ {
+			base := strings.Split(allSections[i].Name(), ".")
+			if allSections[i].Name() == sections[j] || base[0] == sections[j] {
+				_, err := newCfg.NewSection(allSections[i].Name())
+
+				if err != nil {
+					panic(err)
+				}
+			}
+		}
 	}
+
+	return newCfg
 }
 
 func encrypt(tmpFile *os.File) {
@@ -139,7 +156,36 @@ func encrypt(tmpFile *os.File) {
 			userSections = strings.Split(sections, "")
 		}
 
-		copy_ini(cfg, userSections)
+		buf := new(bytes.Buffer)
+		newCfg := copy_ini(cfg, userSections)
+		_, err := newCfg.WriteTo(buf)
+		if err != nil {
+			panic(err)
+		}
+
+		f, err := os.Create(fmt.Sprintf("test-%s.gpg", key[0].SubKeys().KeyID()))
+		if err != nil {
+			panic(err)
+		}
+
+		cipher, err := gpgme.NewDataWriter(f)
+		if err != nil {
+			panic(err)
+		}
+
+		ctx, err := gpgme.New()
+		if err != nil {
+			panic(err)
+		}
+
+		plain, err := gpgme.NewDataReader(buf)
+
+		if err := ctx.Encrypt(key, 0, plain, cipher); err != nil {
+			panic(err)
+		}
+
+		f.Close()
+
 	}
 }
 

@@ -104,6 +104,12 @@ func findKey(user string, keylist []*gpgme.Key) *gpgme.Key {
 	return userKey
 }
 
+func copy_ini(cfg *ini.File, sections []string) {
+	allSections := cfg.Sections()
+	for i := 0; i < len(allSections); i++ {
+	}
+}
+
 func encrypt(tmpFile *os.File) {
 	keys, _ := gpgme.FindKeys("", false)
 
@@ -133,6 +139,7 @@ func encrypt(tmpFile *os.File) {
 			userSections = strings.Split(sections, "")
 		}
 
+		copy_ini(cfg, userSections)
 	}
 }
 

@@ -10,9 +10,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
+	"github.com/go-ini/ini"
 	"github.com/proglottis/gpgme"
-	"github.com/vaughan0/go-ini"
 )
 
 // Template for initialized files
@@ -106,17 +107,26 @@ func findKey(user string, keylist []*gpgme.Key) *gpgme.Key {
 func encrypt(tmpFile *os.File) {
 	keys, _ := gpgme.FindKeys("", false)
 
-	file, err := ini.LoadFile(tmpFile.Name())
+	cfg, err := ini.Load(tmpFile.Read())
+
 	if err != nil {
 		panic(err)
 	}
 
-	for user, sections := range file["ACCESS"] {
+	accesshash := cfg.GetSection("ACCESS").KeysHash()
+
+	for user, sections := range accesshash {
 		key := findKey(user, keys)
 		if key == nil {
 			println(fmt.Sprintf("No key found for %s", user))
 			continue
 		}
+
+		var userSections []string
+		if sections != "*" {
+			userSections = strings.Split(sections, "")
+		}
+
 	}
 }
 

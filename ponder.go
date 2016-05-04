@@ -82,6 +82,21 @@ func editString(text string) {
 	os.Remove(tmpfile.Name())
 }
 
+func findKey(user string, keylist []*gpgme.Key) *gpgme.Key {
+	var userKey *gpgme.Key
+	for i := 0; i < len(keylist); i++ {
+		subkey := keylist[i].SubKeys()
+		if user == subkey.KeyID() {
+			userKey = keylist[i]
+		}
+		userIDs := keylist[i].UserIDs()
+		if user == userIDs.Email() {
+			userKey = keylist[i]
+		}
+	}
+	return userKey
+}
+
 func decrypt() (*bytes.Buffer, error) {
 	var filename string
 	keys, _ := gpgme.FindKeys("", false)

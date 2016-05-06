@@ -1,0 +1,16 @@
+{
+	"ImportPath": "github.com/FoundersFactory/ponder",
+	"GoVersion": "go1.6",
+	"GodepVersion": "v63",
+	"Deps": [
+		{
+			"ImportPath": "github.com/go-ini/ini",
+			"Comment": "v1.11.0",
+			"Rev": "12f418cc7edc5a618a51407b7ac1f1f512139df3"
+		},
+		{
+			"ImportPath": "github.com/proglottis/gpgme",
+			"Rev": "59a08c19ded59ebea9048557c2e5945ce5c7fb6e"
+		}
+	]
+}
